@@ -2,94 +2,87 @@
 <html lang="ar">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BQ2A MOBILE ENGINE</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>BQ2A | TAZO ENGINE</title>
     <style>
-        /* قفل الصفحة للجوال */
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; touch-action: none; }
-        canvas { display: block; width: 100vw; height: 100vh; }
-
-        /* واجهة الجوال */
-        .mobile-hud {
-            position: absolute; bottom: 40px; width: 100%;
-            display: flex; justify-content: space-around; pointer-events: none;
-        }
-        .action-btn {
-            width: 70px; height: 70px; background: rgba(0, 242, 255, 0.2);
-            border: 2px solid #00f2ff; border-radius: 50%; color: #00f2ff;
-            font-weight: bold; pointer-events: auto; display: flex;
-            align-items: center; justify-content: center; backdrop-filter: blur(5px);
-            -webkit-tap-highlight-color: transparent;
-        }
-        .status-bar {
-            position: absolute; top: 20px; left: 20px; color: #00f2ff;
-            font-family: 'Courier New', monospace; font-size: 12px; pointer-events: none;
-        }
+        body { margin: 0; background: radial-gradient(circle, #222, #000); overflow: hidden; touch-action: none; }
+        #label { position: absolute; top: 20px; width: 100%; text-align: center; color: #00f2ff; font-family: sans-serif; pointer-events: none; text-shadow: 0 0 10px #00f2ff; }
     </style>
 </head>
 <body>
-
-    <div class="status-bar">SYSTEM: BQ2A ONLINE<br>MODE: MOBILE_TOUCH</div>
-
-    <div class="mobile-hud">
-        <div class="action-btn" id="btn-zoom">ZOOM</div>
-        <div class="action-btn" id="btn-spin">SPIN</div>
-    </div>
-
-    <canvas id="application-canvas"></canvas>
-
-    <script src="https://code.playcanvas.com/playcanvas-stable.min.js"></script>
+    <div id="label">مشروع BQ2A<br>اسحب التيزو لتدويره</div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
     <script>
-        const canvas = document.getElementById('application-canvas');
-        const app = new pc.Application(canvas, { touch: new pc.TouchDevice(canvas) });
-        app.setCanvasFillMode(pc.FILLMODE_FILL_WINDOW);
-        app.setCanvasResolution(pc.RESOLUTION_AUTO);
-        app.start();
+        // 1. إعداد المشهد والكاميرا
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
 
-        // إضاءة سينمائية
-        const light = new pc.Entity();
-        light.addComponent('light', { type: 'omni', range: 20, color: new pc.Color(0, 1, 1) });
-        app.root.addChild(light);
-        light.setPosition(2, 5, 5);
+        // 2. إنشاء "التيزو" (أسطوانة نحيفة جداً)
+        const geometry = new THREE.CylinderGeometry(1.2, 1.2, 0.08, 64);
+        const material = new THREE.MeshStandardMaterial({ 
+            color: 0x00f2ff, 
+            metalness: 0.7, 
+            roughness: 0.2 
+        });
+        const tazo = new THREE.Mesh(geometry, material);
+        tazo.rotation.x = Math.PI / 2; // جعل وجه التيزو أمام الكاميرا
+        scene.add(tazo);
 
-        const camera = new pc.Entity();
-        camera.addComponent('camera', { clearColor: new pc.Color(0, 0, 0.05) });
-        app.root.addChild(camera);
-        camera.setPosition(0, 0, 5);
+        // 3. الإضاءة
+        const light = new THREE.PointLight(0xffffff, 1, 100);
+        light.position.set(5, 5, 5);
+        scene.add(light);
+        scene.add(new THREE.AmbientLight(0x404040));
 
-        let mainObject = null;
-        const url = 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/DamagedHelmet/glTF-Binary/DamagedHelmet.glb';
+        camera.position.z = 3;
 
-        app.assets.loadFromUrl(url, "container", function (err, asset) {
-            mainObject = asset.resource.instantiateRenderEntity();
-            app.root.addChild(mainObject);
+        // 4. منطق التحكم باللمس (القصور الذاتي)
+        let isDragging = false;
+        let rotationSpeed = 0.02;
+        let lastTouchX = 0;
 
-            // تحكم اللمس الحقيقي
-            app.touch.on(pc.EVENT_TOUCHMOVE, (e) => {
-                const touch = e.touches[0];
-                mainObject.rotate(touch.dy * 0.4, touch.dx * 0.4, 0);
-            });
+        window.addEventListener('touchstart', (e) => {
+            isDragging = true;
+            lastTouchX = e.touches[0].clientX;
         });
 
-        // ميكانيكا الأزرار للجوال
-        document.getElementById('btn-spin').addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            if(mainObject) {
-                const rotateInterval = setInterval(() => {
-                    mainObject.rotate(0, 5, 0);
-                }, 16);
-                setTimeout(() => clearInterval(rotateInterval), 1000);
+        window.addEventListener('touchmove', (e) => {
+            if (isDragging) {
+                const deltaX = e.touches[0].clientX - lastTouchX;
+                rotationSpeed = deltaX * 0.01;
+                tazo.rotation.y += rotationSpeed;
+                lastTouchX = e.touches[0].clientX;
             }
         });
 
-        document.getElementById('btn-zoom').addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            const currentZ = camera.getPosition().z;
-            camera.setPosition(0, 0, currentZ === 5 ? 3 : 5);
+        window.addEventListener('touchend', () => {
+            isDragging = false;
         });
 
-        window.addEventListener('resize', () => app.resizeCanvas());
+        // 5. حلقة التحديث (الأنيميشن)
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            if (!isDragging) {
+                tazo.rotation.y += rotationSpeed;
+                rotationSpeed *= 0.98; // احتكاك تدريجي للتوقف
+            }
+            
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // تحديث الحجم عند تدوير الجوال
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
     </script>
 </body>
 </html>
