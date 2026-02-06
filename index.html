@@ -1,78 +1,95 @@
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-
-<script>
-    // دالة التقاط الصورة وتحليلها
-    async function scanAndProcess() {
-        const video = document.getElementById('video');
-        const canvas = document.createElement('canvas');
-        const context = canvas.getContext('2d');
-
-        // ضبط مقاسات اللقطة بناءً على إطار الفحص
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-        // بدء عملية التعرف على النص
-        try {
-            console.log("جاري تحليل الرقم التسلسلي...");
-            const { data: { text } } = await Tesseract.recognize(canvas, 'eng', {
-                logger: m => console.log(m) // لمتابعة التقدم في الكونسول
-            });
-
-            // إذا وجدنا نصاً طويلاً (رقم تسلسلي محتمل)
-            if (text.length > 5) {
-                finalizeWarranty(text.trim());
-            }
-        } catch (error) {
-            console.error("خطأ في التحليل البصري:", error);
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>الضمان الرقمي | 2026</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg: #050505; --card: #111; --accent: #00ff88; --white: #ffffff; }
+        body { 
+            margin: 0; background: var(--bg); color: var(--white); 
+            font-family: 'Cairo', sans-serif; display: flex; flex-direction: column; align-items: center;
         }
-    }
+        .container { width: 90%; max-width: 400px; padding-top: 60px; }
+        .header { text-align: center; margin-bottom: 40px; }
+        .header h1 { font-size: 24px; font-weight: 300; letter-spacing: 2px; }
 
-    function finalizeWarranty(serial) {
-        // اهتزاز الهاتف عند النجاح
-        if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+        /* البطاقة المعتمدة */
+        .card {
+            background: var(--card); border: 1px solid #222; border-radius: 20px;
+            padding: 25px; margin-bottom: 20px; position: relative;
+        }
+        .label { font-size: 10px; color: #555; text-transform: uppercase; letter-spacing: 2px; }
+        .p-name { font-size: 18px; margin: 10px 0; font-weight: 700; }
+        .status { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--accent); }
+        .dot { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; box-shadow: 0 0 10px var(--accent); }
         
-        // تحديث واجهة الضمان الرقمي بالبيانات الجديدة
-        document.getElementById('p-serial').innerText = serial;
-        document.getElementById('main-card').innerHTML = `
-            <div class="label">تم التوثيق بنجاح</div>
-            <div class="p-name">منتج جديد موثق</div>
-            <div class="status-box">
-                <span class="dot"></span>
-                <span>ضمان فعال (Blockchain Secured)</span>
+        .details { margin-top: 25px; display: flex; justify-content: space-between; border-top: 1px solid #222; padding-top: 15px; }
+        .item div:first-child { font-size: 9px; color: #444; }
+        .item div:last-child { font-size: 12px; font-weight: bold; }
+
+        .btn-add {
+            position: fixed; bottom: 40px; width: 85%; max-width: 350px;
+            padding: 20px; background: var(--white); color: #000;
+            border: none; border-radius: 15px; font-weight: bold; cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h1>الضمان الرقمي</h1>
+            <p style="color: #333; font-size: 11px;">نظام توثيق الأصول العالمي</p>
+        </div>
+
+        <div id="assets-list">
             </div>
-        `;
-        
-        alert("تم التعرف على الرقم: " + serial + "\nتم إصدار الضمان الرقمي!");
-        closeCamera();
-    }
+    </div>
 
-    // تفعيل المسح التلقائي كل 3 ثوانٍ عند فتح الكاميرا
-    let scanInterval;
-    function startAutoScan() {
-        scanInterval = setInterval(scanAndProcess, 3000);
-    }
-    
-    // تعديل دالة فتح الكاميرا لتشمل المسح التلقائي
-    async function openCamera() {
-        const cameraLayer = document.getElementById('camera-layer');
-        const video = document.getElementById('video');
+    <button class="btn-add" onclick="addNewAsset()">توثيق أصل جديد +</button>
 
-        try {
-            stream = await navigator.mediaDevices.getUserMedia({ 
-                video: { facingMode: "environment" } 
-            });
-            video.srcObject = stream;
-            cameraLayer.style.display = 'flex';
-            startAutoScan(); // ابدأ المسح التلقائي
-        } catch (err) {
-            alert("عذراً، نظام 2026 يتطلب صلاحية الكاميرا.");
+    <script>
+        // دالة لجلب البيانات المحفوظة عند فتح الصفحة
+        window.onload = function() {
+            renderAssets();
+        };
+
+        function addNewAsset() {
+            const name = prompt("أدخل اسم المنتج (مثلاً: ساعة رولكس):");
+            const serial = "SN-" + Math.floor(Math.random() * 1000000); // توليد رقم عشوائي مؤقتاً
+            
+            if (name) {
+                const newAsset = { name, serial, date: new Date().toLocaleDateString('ar-SA') };
+                let assets = JSON.parse(localStorage.getItem('myAssets') || '[]');
+                assets.push(newAsset);
+                localStorage.setItem('myAssets', JSON.stringify(assets));
+                renderAssets();
+            }
         }
-    }
 
-    function closeCamera() {
-        clearInterval(scanInterval);
-        if (stream) stream.getTracks().forEach(track => track.stop());
-        document.getElementById('camera-layer').style.display = 'none';
-    }
-</script>
+        function renderAssets() {
+            const list = document.getElementById('assets-list');
+            const assets = JSON.parse(localStorage.getItem('myAssets') || '[]');
+            
+            if (assets.length === 0) {
+                list.innerHTML = `<p style="text-align:center; color:#222;">لا توجد ضمانات مسجلة بعد</p>`;
+                return;
+            }
+
+            list.innerHTML = assets.map(asset => `
+                <div class="card">
+                    <div class="label">أصل موثق</div>
+                    <div class="p-name">${asset.name}</div>
+                    <div class="status"><span class="dot"></span>ضمان فعال (Verified)</div>
+                    <div class="details">
+                        <div class="item"><div>الرقم التسلسلي</div><div>${asset.serial}</div></div>
+                        <div class="item" style="text-align:left;"><div>تاريخ التوثيق</div><div>${asset.date}</div></div>
+                    </div>
+                </div>
+            `).join('');
+        }
+    </script>
+</body>
+</html>
