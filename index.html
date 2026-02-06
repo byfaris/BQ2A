@@ -3,163 +3,137 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>THE NULL ENTITY | الوجود السري</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <title>UNAUTHORIZED ACCESS | دخول غير مصرح</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@900&family=Cairo:wght@700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --dark-void: #000000;
-            --ghost-light: #00ffff; /* أزرق سماوي خفيف لإيحاء الأطياف */
-            --distress-red: #ff0055;
-        }
+        :root { --red: #ff0000; --cyan: #00f2ff; --black: #000; }
+        
+        * { cursor: none; margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            background-color: var(--dark-void);
-            color: #fff;
+            background: var(--black);
+            color: white;
             font-family: 'Cairo', sans-serif;
+            height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            height: 100vh;
-            margin: 0;
             overflow: hidden;
-            position: relative; /* للسماح بتأثيرات الخلفية */
-            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewport="0 0 16 16" version="1.1" id="svg_cursor"><circle cx="8" cy="8" r="4" fill="%2300ffff"/></svg>') 16 16, auto;
+            background-image: repeating-linear-gradient(0deg, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 1px, transparent 1px, transparent 2px);
+            background-size: 100% 3px;
         }
 
-        /* تأثير الخلفية المزعج (Flickering Grid) */
-        .background-grid {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            background-image: 
-                linear-gradient(rgba(0, 255, 255, 0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 255, 255, 0.03) 1px, transparent 1px);
-            background-size: 50px 50px;
-            animation: flicker 10s infinite alternate;
-            opacity: 0.1;
+        /* تأثير التشويش الجذري (Global Glitch) */
+        .glitch-layer {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 0, 0, 0.05);
             pointer-events: none;
+            z-index: 999;
+            opacity: 0;
         }
 
-        @keyframes flicker {
-            0% { opacity: 0.1; }
-            50% { opacity: 0.05; }
-            100% { opacity: 0.1; }
-        }
+        .active-glitch { animation: flash 0.2s infinite; opacity: 1; }
+        @keyframes flash { 0% { background: rgba(255,0,0,0.1); } 50% { background: rgba(0,242,255,0.1); } 100% { background: transparent; } }
 
-        .main-container {
-            border: 1px solid var(--ghost-light);
-            padding: 50px;
-            border-radius: 10px;
+        /* الكرت المركزي الغامض */
+        .gate-card {
+            border: 1px solid #222;
+            padding: 60px;
+            background: rgba(5, 5, 5, 0.9);
             text-align: center;
-            background: rgba(0, 0, 0, 0.8);
-            box-shadow: 0 0 50px rgba(0, 255, 255, 0.2);
-            max-width: 500px;
-            z-index: 10;
             position: relative;
+            box-shadow: 0 0 50px rgba(255, 0, 0, 0.1);
+            transition: 0.2s;
         }
 
-        h1 {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 2rem;
-            margin-bottom: 25px;
-            color: var(--ghost-light);
-            text-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+        .gate-card:hover { 
+            border-color: var(--red); 
+            transform: scale(1.02) skewX(-1deg);
+            box-shadow: 0 0 100px rgba(255, 0, 0, 0.3);
         }
+
+        h1 { font-family: 'Orbitron'; font-size: 2.5rem; color: var(--red); text-shadow: 2px 2px #000, -2px -2px var(--cyan); margin-bottom: 20px; }
         
-        p {
-            font-size: 1.1rem;
-            margin-bottom: 30px;
-            line-height: 1.6;
-            color: #ccc;
+        .price-tag { font-family: 'Orbitron'; font-size: 4rem; color: #fff; margin: 20px 0; letter-spacing: -5px; }
+
+        .secure-btn {
+            background: white; color: black; border: none; padding: 20px 60px;
+            font-weight: 900; font-size: 1.5rem; text-transform: uppercase;
+            box-shadow: 5px 5px 0 var(--red); transition: 0.1s;
         }
 
-        .price-display {
-            font-size: 2.8rem;
-            font-weight: bold;
-            color: var(--distress-red); /* لون أحمر للإيحاء بالتحذير */
-            margin-bottom: 40px;
-            text-shadow: 0 0 20px rgba(255, 0, 85, 0.6);
-            letter-spacing: 2px;
-        }
-        
-        .access-btn {
-            background: var(--distress-red);
-            color: #fff;
-            border: none;
-            padding: 18px 50px;
-            border-radius: 5px;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 1.2rem;
-            transition: 0.3s;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            box-shadow: 0 0 25px rgba(255, 0, 85, 0.4);
-        }
+        .secure-btn:active { transform: translate(3px, 3px); box-shadow: none; }
 
-        .access-btn:hover {
-            background: #ff3377;
-            transform: scale(1.03);
-            box-shadow: 0 0 35px rgba(255, 0, 85, 0.6);
+        /* مؤشر ماوس مخصص مخيف */
+        #custom-cursor {
+            position: fixed; width: 40px; height: 40px; border: 2px solid var(--red);
+            border-radius: 50%; pointer-events: none; transform: translate(-50%, -50%);
+            z-index: 10000; transition: width 0.1s, height 0.1s;
         }
-
-        .footer-glitch {
-            position: absolute;
-            bottom: 15px;
-            font-size: 0.7rem;
-            color: #222;
-            animation: glitch-text 5s infinite alternate;
-            pointer-events: none;
-        }
-
-        @keyframes glitch-text {
-            0% { transform: skewX(0deg); color: #222; }
-            20% { transform: skewX(5deg); color: #333; }
-            40% { transform: skewX(-5deg); color: #222; }
-            60% { transform: skewX(3deg); color: #333; }
-            80% { transform: skewX(-3deg); color: #222; }
-            100% { transform: skewX(0deg); color: #222; }
-        }
-
-        /* الصوت المحيطي */
-        audio { display: none; }
     </style>
 </head>
-<body>
+<body onmousemove="handleMove(event)" onclick="handleClick()">
 
-    <div class="background-grid"></div>
+    <div class="glitch-layer" id="glitch"></div>
+    <div id="custom-cursor"></div>
 
-    <div class="main-container">
-        <h1>...وجود سري غير مفهوم...</h1>
-        <p>ملف "اللغة المنفية" - يتجاوز إدراك البشر. هل أنت مستعد لما لا يجب رؤيته؟</p>
-        <div class="price-display">4.99$</div>
-        <button class="access-btn" onclick="initiateAccess()">وصول مشفر</button>
+    <div class="gate-card">
+        <h1 id="main-title">STRICTLY CONFIDENTIAL</h1>
+        <p>مجلد اللغة الممنوعة - شراء الملف سيعرضك للمسؤولية.</p>
+        <div class="price-tag">$4.99</div>
+        <button class="secure-btn">امتلاك السر</button>
     </div>
 
-    <div class="footer-glitch">ERROR_CODE_404_REALITY_NOT_FOUND</div>
-
-    <audio id="ambient-audio" loop autoplay>
-        <source src="https://assets.mixkit.co/sfx/preview/mixkit-sci-fi-drone-051.mp3" type="audio/mpeg">
-        <source src="https://assets.mixkit.co/sfx/preview/mixkit-sci-fi-drone-051.ogg" type="audio/ogg">
-        متصفحك لا يدعم تشغيل الصوت.
-    </audio>
-
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const audio = document.getElementById('ambient-audio');
-            // محاولة تشغيل الصوت تلقائياً
-            audio.play().catch(e => {
-                console.log("Audio autoplay blocked. User interaction required.");
-                // رسالة للمستخدم لتشغيل الصوت يدوياً
-                document.body.addEventListener('click', () => audio.play(), { once: true });
-            });
-        });
+        const glitch = document.getElementById('glitch');
+        const cursor = document.getElementById('custom-cursor');
+        const title = document.getElementById('main-title');
 
-        function initiateAccess() {
-            // محاكاة عملية الدفع الغامضة
-            alert("فحص البروتوكولات الأمنية... قد يستغرق الأمر أكثر مما تتوقع.");
-            window.location.href = "YOUR_SECURE_PAYMENT_GATEWAY_URL_HERE";
+        // مصفوفة أصوات (تنبيهات نظام مخيفة)
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playDisturbingSound(freq, type) {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, ctx.currentTime);
+            gain.gain.setValueAtTime(0.05, ctx.currentTime);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.1);
         }
+
+        function handleMove(e) {
+            cursor.style.left = e.clientX + 'px';
+            cursor.style.top = e.clientY + 'px';
+            
+            // صوت خفيف جداً مع الحركة
+            if(Math.random() > 0.95) playDisturbingSound(100, 'sawtooth');
+        }
+
+        function handleClick() {
+            // تأثير التشويش عند الضغط
+            glitch.classList.add('active-glitch');
+            playDisturbingSound(50, 'square');
+            
+            setTimeout(() => {
+                glitch.classList.remove('active-glitch');
+            }, 500);
+
+            // تغيير النص لثوانٍ
+            const original = title.innerText;
+            title.innerText = "WE SEE YOU";
+            setTimeout(() => title.innerText = original, 1000);
+        }
+
+        // تشويش عشوائي كل فترة
+        setInterval(() => {
+            if(Math.random() > 0.7) {
+                glitch.classList.add('active-glitch');
+                setTimeout(() => glitch.classList.remove('active-glitch'), 100);
+            }
+        }, 3000);
     </script>
 </body>
 </html>
