@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>QB2A | النسخة النهائية</title>
+    <title>QB2A | النسخة المتكاملة</title>
     <style>
-        :root { --blue: #00f2ff; --red: #ff0044; }
+        :root { --blue: #00f2ff; --red: #ff0044; --grid-color: #0f1a2a; }
         body, html { 
             margin: 0; padding: 0; width: 100%; height: 100%; 
             overflow: hidden; background: #000; touch-action: none; 
             -webkit-user-select: none; user-select: none;
+            font-family: 'Segoe UI', Tahoma, sans-serif;
         }
         canvas { display: block; width: 100vw; height: 100vh; }
 
@@ -17,11 +18,14 @@
         #ui-layer {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             pointer-events: none; z-index: 10; font-family: sans-serif;
-            padding: 20px; box-sizing: border-box;
+            padding: env(safe-area-inset-top, 20px) 20px 20px 20px; box-sizing: border-box;
+            display: flex; flex-direction: column;
         }
+        .hud-top-left { display: flex; flex-direction: column; align-items: flex-start; }
         .stat { color: var(--blue); font-weight: bold; font-size: 18px; text-shadow: 0 0 10px #000; }
         .hp-container { width: 150px; height: 10px; background: rgba(255,255,255,0.1); border: 1px solid var(--blue); border-radius: 5px; margin-top: 5px; }
         #hp-bar { width: 100%; height: 100%; background: var(--blue); transition: 0.3s; }
+        #player-class-display { font-size: 14px; color: #aaa; margin-top: 5px; }
 
         /* أزرار الجوال - تحسين الاستجابة */
         .mobile-ui {
@@ -45,20 +49,57 @@
             color: white; display: flex; align-items: center; justify-content: center;
             font-weight: bold; pointer-events: auto; box-shadow: 0 0 15px var(--red);
         }
+
+        /* شاشة اختيار الشخصية */
+        #char-select-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); display: flex; flex-direction: column;
+            align-items: center; justify-content: center; z-index: 200;
+        }
+        .select-title { font-size: 40px; color: var(--blue); text-shadow: 0 0 20px var(--blue); margin-bottom: 30px; }
+        .char-options { display: flex; gap: 30px; }
+        .char-card {
+            background: rgba(255,255,255,0.05); border: 2px solid var(--blue); border-radius: 10px;
+            padding: 20px; width: 200px; text-align: center; cursor: pointer; transition: 0.3s;
+            box-shadow: 0 0 10px rgba(0,242,255,0.1);
+        }
+        .char-card:hover { background: rgba(255,255,255,0.1); box-shadow: 0 0 25px var(--blue); }
+        .char-name { font-size: 24px; color: white; margin-bottom: 10px; }
+        .char-desc { font-size: 14px; color: #aaa; margin-bottom: 10px; }
+        .char-stats { font-size: 12px; color: var(--blue); }
     </style>
 </head>
 <body>
 
     <div id="ui-layer">
-        <div class="stat" id="score-text">البشر ضد الـ AI: 0</div>
-        <div class="hp-container"><div id="hp-bar"></div></div>
+        <div class="hud-top-left">
+            <div class="stat" id="score-text">تصفية الـ AI: 0</div>
+            <div class="hp-container"><div id="hp-bar"></div></div>
+            <div id="player-class-display">النوع: غير محدد</div>
+        </div>
     </div>
 
-    <div class="mobile-ui" id="mobile-controls">
+    <div id="mobile-controls">
         <div class="joystick-base" id="joy-base">
             <div class="joystick-stick" id="joy-stick"></div>
         </div>
-        <div class="action-btn" id="fire-btn">FIRE</div>
+        <div class="action-btn" id="fire-btn">هجوم</div>
+    </div>
+
+    <div id="char-select-overlay">
+        <div class="select-title">اختر فصيلك البشري</div>
+        <div class="char-options">
+            <div class="char-card" data-class="assault">
+                <div class="char-name">المهاجم (Assault)</div>
+                <div class="char-desc">سرعة متوسطة، قوة نيران عالية.</div>
+                <div class="char-stats">السرعة: ⭐⭐⭐ / القوة: ⭐⭐⭐⭐ / الصحة: ⭐⭐⭐</div>
+            </div>
+            <div class="char-card" data-class="hacker">
+                <div class="char-name">الهاكر (Hacker)</div>
+                <div class="char-desc">سرعة عالية، يطلق فيروسات سريعة.</div>
+                <div class="char-stats">السرعة: ⭐⭐⭐⭐ / القوة: ⭐⭐⭐ / الصحة: ⭐⭐</div>
+            </div>
+        </div>
     </div>
 
     <canvas id="gameCanvas"></canvas>
@@ -68,29 +109,86 @@
         const ctx = canvas.getContext('2d');
         const joyBase = document.getElementById('joy-base');
         const joyStick = document.getElementById('joy-stick');
+        const charSelectOverlay = document.getElementById('char-select-overlay');
+        const charCards = document.querySelectorAll('.char-card');
+        const playerClassDisplay = document.getElementById('player-class-display');
 
         let score = 0;
         let health = 100;
         let enemies = [];
         let bullets = [];
+        let upgrades = []; // لقطع الترقيات
         let moveDir = { x: 0, y: 0 };
         const keys = {};
+        let gameStarted = false;
 
-        const player = { x: 0, y: 0, size: 15, color: '#00f2ff', speed: 5 };
+        const player = { 
+            x: 0, y: 0, size: 15, color: '#00f2ff', 
+            speed: 5, fireRate: 200, lastFire: 0, bulletSpeed: 10,
+            class: null // نوع الشخصية
+        };
 
+        const playerClasses = {
+            assault: {
+                name: "المهاجم",
+                speed: 4,
+                fireRate: 250, // أبطأ قليلاً لكن أقوى
+                bulletSpeed: 12,
+                health: 120
+            },
+            hacker: {
+                name: "الهاكر",
+                speed: 6,
+                fireRate: 150, // أسرع في الإطلاق
+                bulletSpeed: 10,
+                health: 80
+            }
+        };
+
+        // --- وظائف عامة ---
         function resize() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
-            player.x = canvas.width / 2;
-            player.y = canvas.height / 2;
+            if (!gameStarted) { // فقط عند البداية أو إذا لم تبدأ اللعبة
+                player.x = canvas.width / 2;
+                player.y = canvas.height / 2;
+            }
         }
         window.addEventListener('resize', resize);
         resize();
 
+        // منع التكبير المزعج (Double Tap Zoom)
+        document.addEventListener('touchstart', (e) => {
+            if (e.touches.length > 1) e.preventDefault(); 
+        }, { passive: false });
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', (e) => {
+            let now = Date.now();
+            if (now - lastTouchEnd <= 300) e.preventDefault();
+            lastTouchEnd = now;
+        }, false);
+
+        // --- نظام اختيار الشخصية ---
+        charCards.forEach(card => {
+            card.addEventListener('click', () => {
+                const selectedClass = card.dataset.class;
+                player.class = selectedClass;
+                player.speed = playerClasses[selectedClass].speed;
+                player.fireRate = playerClasses[selectedClass].fireRate;
+                player.bulletSpeed = playerClasses[selectedClass].bulletSpeed;
+                health = playerClasses[selectedClass].health; // ضبط الصحة
+                document.getElementById('hp-bar').style.width = health + "%";
+                playerClassDisplay.innerText = `النوع: ${playerClasses[selectedClass].name}`;
+                charSelectOverlay.style.display = 'none'; // إخفاء الشاشة
+                gameStarted = true;
+            });
+        });
+
+
         // --- نظام التحكم (Keyboard) ---
         window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
         window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
-
+        
         // --- نظام الجويستيك (Mobile Joystick) ---
         let joyActive = false;
         const joyLimit = 40;
@@ -125,31 +223,50 @@
 
         // --- نظام القتال ---
         function shoot(tx, ty) {
+            if (!gameStarted || Date.now() - player.lastFire < player.fireRate) return;
+            player.lastFire = Date.now();
+
             const angle = Math.atan2(ty - player.y, tx - player.x);
-            bullets.push({ x: player.x, y: player.y, vx: Math.cos(angle) * 10, vy: Math.sin(angle) * 10 });
+            bullets.push({ 
+                x: player.x, y: player.y, 
+                vx: Math.cos(angle) * player.bulletSpeed, 
+                vy: Math.sin(angle) * player.bulletSpeed 
+            });
         }
 
         document.getElementById('fire-btn').addEventListener('touchstart', (e) => {
             e.preventDefault();
-            shoot(player.x, player.y - 100);
+            shoot(player.x, player.y - 100); // إطلاق للأمام
         });
         window.addEventListener('mousedown', (e) => shoot(e.clientX, e.clientY));
 
         // --- منطق اللعبة ---
         function spawnEnemy() {
-            if(enemies.length < 12) {
+            if(!gameStarted) return;
+            if(enemies.length < 15 + Math.floor(score / 50)) { // تزايد الأعداء مع النتيجة
                 const side = Math.floor(Math.random() * 4);
                 let x, y;
                 if(side === 0) { x = Math.random() * canvas.width; y = -30; }
                 else if(side === 1) { x = Math.random() * canvas.width; y = canvas.height + 30; }
                 else if(side === 2) { x = -30; y = Math.random() * canvas.height; }
                 else { x = canvas.width + 30; y = Math.random() * canvas.height; }
-                enemies.push({ x, y, speed: 1.5 + Math.random() * 1.5 });
+                enemies.push({ x, y, size: 12, speed: 1.5 + Math.random() * 1.5, health: 10 }); // الأعداء الآن لديهم صحة
             }
         }
-        setInterval(spawnEnemy, 1500);
+        setInterval(spawnEnemy, 1000); // أعداء أكثر تكراراً
+
+        function spawnUpgrade(x, y) {
+            if (Math.random() < 0.3) { // 30% فرصة لسقوط ترقية
+                upgrades.push({
+                    x, y, size: 10, type: Math.random() < 0.5 ? 'speed' : 'firepower',
+                    color: Math.random() < 0.5 ? '#ffff00' : '#00ff00'
+                });
+            }
+        }
 
         function update() {
+            if(!gameStarted) return; // لا تحدّث اللعبة قبل اختيار الشخصية
+
             // حركة الكمبيوتر
             if (keys['w'] || keys['arrowup']) player.y -= player.speed;
             if (keys['s'] || keys['arrowdown']) player.y += player.speed;
@@ -175,25 +292,56 @@
                 en.y += Math.sin(angle) * en.speed;
 
                 bullets.forEach((b, bi) => {
-                    if(Math.hypot(b.x - en.x, b.y - en.y) < 15) {
-                        enemies.splice(i, 1);
-                        bullets.splice(bi, 1);
-                        score += 10;
-                        document.getElementById('score-text').innerText = `البشر ضد الـ AI: ${score}`;
+                    if(Math.hypot(b.x - en.x, b.y - en.y) < en.size + 5) {
+                        en.health -= 5; // كل رصاصة تنقص صحة العدو
+                        bullets.splice(bi, 1); // الرصاصة تختفي
+
+                        if (en.health <= 0) {
+                            spawnUpgrade(en.x, en.y); // فرصة لسقوط ترقية
+                            enemies.splice(i, 1);
+                            score += 10;
+                            document.getElementById('score-text').innerText = `تصفية الـ AI: ${score}`;
+                        }
                     }
                 });
 
-                if(Math.hypot(player.x - en.x, player.y - en.y) < player.size + 12) {
+                if(Math.hypot(player.x - en.x, player.y - en.y) < player.size + en.size) {
                     health -= 0.2;
                     document.getElementById('hp-bar').style.width = health + "%";
-                    if(health <= 0) location.reload();
+                    if(health <= 0) {
+                        alert(`انتهت اللعبة! نقاطك: ${score}`);
+                        location.reload();
+                    }
+                }
+            });
+
+            // التقاط الترقيات
+            upgrades.forEach((up, i) => {
+                if (Math.hypot(player.x - up.x, player.y - up.y) < player.size + up.size) {
+                    if (up.type === 'speed') player.speed += 0.5;
+                    else if (up.type === 'firepower') player.bulletSpeed += 1;
+                    upgrades.splice(i, 1);
                 }
             });
         }
 
+        // --- وظائف الرسم ---
+        let gridOffset = 0;
         function draw() {
             ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // رسم خلفية الشبكة المتحركة (الميدان)
+            gridOffset = (gridOffset + 0.5) % 50; // سرعة تحرك الشبكة
+            ctx.strokeStyle = var('--grid-color');
+            ctx.lineWidth = 0.5;
+            for(let i=0; i<canvas.width; i+=50) {
+                ctx.beginPath(); ctx.moveTo(i + gridOffset, 0); ctx.lineTo(i + gridOffset, canvas.height); ctx.stroke();
+            }
+            for(let i=0; i<canvas.height; i+=50) {
+                ctx.beginPath(); ctx.moveTo(0, i + gridOffset); ctx.lineTo(canvas.width, i + gridOffset); ctx.stroke();
+            }
+
 
             // اللاعب
             ctx.fillStyle = player.color;
@@ -201,7 +349,7 @@
             ctx.beginPath(); ctx.arc(player.x, player.y, player.size, 0, Math.PI*2); ctx.fill();
 
             // الرصاص
-            ctx.fillStyle = '#fff';
+            ctx.fillStyle = '#fff'; ctx.shadowBlur = 5;
             bullets.forEach(b => {
                 ctx.beginPath(); ctx.arc(b.x, b.y, 3, 0, Math.PI*2); ctx.fill();
             });
@@ -209,15 +357,23 @@
             // الأعداء
             ctx.fillStyle = '#ff0044'; ctx.shadowColor = '#ff0044';
             enemies.forEach(en => {
-                ctx.beginPath(); ctx.arc(en.x, en.y, 12, 0, Math.PI*2); ctx.fill();
+                ctx.beginPath(); ctx.arc(en.x, en.y, en.size, 0, Math.PI*2); ctx.fill();
             });
+
+            // الترقيات
+            upgrades.forEach(up => {
+                ctx.fillStyle = up.color;
+                ctx.shadowColor = up.color;
+                ctx.beginPath(); ctx.arc(up.x, up.y, up.size, 0, Math.PI*2); ctx.fill();
+            });
+
             ctx.shadowBlur = 0;
         }
 
         function loop() {
-            update();
-            draw();
             requestAnimationFrame(loop);
+            update(); // تحديث المنطق
+            draw();   // رسم المشهد
         }
         loop();
     </script>
