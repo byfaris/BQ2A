@@ -3,17 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>QB2A | النسخة النهائية المستقرة</title>
+    <title>QB2A | ثبات كامل</title>
     <style>
         :root { --blue: #00f2ff; --red: #ff0044; }
+        
+        /* تعطيل التكبير والإيماءات نهائياً */
         body, html { 
             margin: 0; padding: 0; width: 100%; height: 100%; 
-            overflow: hidden; background: #000; touch-action: none; 
-            -webkit-user-select: none; user-select: none;
+            overflow: hidden; background: #000; 
+            touch-action: none; /* يمنع التكبير الافتراضي */
+            -webkit-user-select: none; /* منع تحديد النص */
+            user-select: none;
+            -webkit-touch-callout: none; /* منع القائمة المنبثقة في iOS */
         }
+        
         canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 
-        /* واجهة المستخدم */
         #ui-layer {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             pointer-events: none; z-index: 10; font-family: sans-serif;
@@ -21,22 +26,24 @@
         }
         .stat { color: var(--blue); font-weight: bold; font-size: 18px; }
 
-        /* أزرار التحكم - دعم شامل لجميع المتصفحات */
         .ctrl-zone {
             position: absolute; bottom: 30px; width: 100%; height: 150px;
             display: flex; justify-content: space-between; align-items: center;
             padding: 0 30px; box-sizing: border-box; pointer-events: none;
         }
+        
         .joy-area {
             width: 120px; height: 120px; background: rgba(0,242,255,0.1);
             border: 2px solid var(--blue); border-radius: 50%; 
             pointer-events: auto; position: relative; touch-action: none;
         }
+        
         #stick {
             width: 50px; height: 50px; background: var(--blue); 
             border-radius: 50%; position: absolute; top: 35px; left: 35px;
             pointer-events: none;
         }
+        
         .fire-btn {
             width: 90px; height: 90px; background: rgba(255,0,68,0.2);
             border: 3px solid var(--red); border-radius: 50%;
@@ -44,11 +51,10 @@
             font-weight: bold; pointer-events: auto; touch-action: none;
         }
 
-        /* شاشة الاختيار */
         #start-screen {
             position: absolute; inset: 0; background: rgba(0,0,0,0.9);
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            z-index: 100; color: white; text-align: center;
+            z-index: 100; color: white; text-align: center; touch-action: none;
         }
         .card {
             border: 2px solid var(--blue); padding: 15px; margin: 10px; width: 200px;
@@ -66,7 +72,6 @@
 
     <div id="ui-layer">
         <div class="stat" id="score">النقاط: 0</div>
-        <div id="info" style="color:#555; font-size:12px">المتصفح مدعوم ✓</div>
     </div>
 
     <div class="ctrl-zone">
@@ -79,6 +84,19 @@
     <canvas id="gameCanvas"></canvas>
 
     <script>
+        // --- حماية إضافية من التكبير عبر JS ---
+        document.addEventListener('touchstart', (e) => {
+            if (e.touches.length > 1) e.preventDefault(); 
+        }, { passive: false });
+
+        let lastTouchTime = 0;
+        document.addEventListener('touchend', (e) => {
+            const now = Date.now();
+            if (now - lastTouchTime <= 300) e.preventDefault();
+            lastTouchTime = now;
+        }, false);
+
+        // --- باقي كود اللعبة المستقر ---
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const joyBase = document.getElementById('joy-base');
@@ -90,7 +108,6 @@
         let gameActive = false;
         let moveDir = { x: 0, y: 0 };
         const keys = {};
-
         const player = { x: 0, y: 0, size: 15, speed: 5 };
 
         function resize() {
@@ -102,7 +119,6 @@
         window.addEventListener('resize', resize);
         resize();
 
-        // بدلا من Touch استخدمنا Pointer لضمان عملها في Safari و Chrome
         let isMoving = false;
         joyBase.onpointerdown = (e) => { isMoving = true; handleMove(e); };
         window.onpointermove = (e) => { if(isMoving) handleMove(e); };
@@ -125,10 +141,8 @@
             moveDir = { x: dx/limit, y: dy/limit };
         }
 
-        // إطلاق النار
         document.getElementById('fire-trigger').onpointerdown = (e) => {
             e.preventDefault();
-            const angle = -Math.PI/2; // للأعلى افتراضياً في الجوال
             bullets.push({ x: player.x, y: player.y, vx: 0, vy: -10 });
         };
 
@@ -143,8 +157,6 @@
 
         function update() {
             if(!gameActive) return;
-            
-            // حركة
             if(keys['w']) player.y -= player.speed;
             if(keys['s']) player.y += player.speed;
             if(keys['a']) player.x -= player.speed;
@@ -152,7 +164,6 @@
             player.x += moveDir.x * player.speed;
             player.y += moveDir.y * player.speed;
 
-            // أعداء
             if(Math.random() < 0.02) enemies.push({x: Math.random()*canvas.width, y: -20, s: 2});
             
             enemies.forEach((en, i) => {
@@ -164,19 +175,14 @@
                     }
                 });
             });
-
-            bullets.forEach((b, i) => { b.y += b.vy; if(b.y < 0) bullets.splice(i,1); });
+            bullets.forEach((b, i) => { b.y += b.vy; if(b.y < -50) bullets.splice(i,1); });
         }
 
         function draw() {
             ctx.fillStyle = 'black'; ctx.fillRect(0,0,canvas.width, canvas.height);
             if(!gameActive) return;
-
-            // اللاعب
             ctx.fillStyle = '#00f2ff'; ctx.beginPath();
             ctx.arc(player.x, player.y, player.size, 0, Math.PI*2); ctx.fill();
-
-            // الأعداء والرصاص
             ctx.fillStyle = 'red'; enemies.forEach(en => ctx.fillRect(en.x, en.y, 20, 20));
             ctx.fillStyle = 'white'; bullets.forEach(b => ctx.fillRect(b.x, b.y, 4, 10));
         }
