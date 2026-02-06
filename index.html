@@ -7,7 +7,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@900&family=Noto+Sans+TC:wght@700&display=swap" rel="stylesheet">
     <style>
         :root { --red: #ff0000; --cyan: #00f2ff; --black: #000; }
-        * { cursor: none; margin: 0; padding: 0; box-sizing: border-box; }
+        
+        /* تعطيل المؤشر العادي لجميع المتصفحات */
+        * { cursor: none !important; margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             background: var(--black);
@@ -18,55 +20,74 @@
             align-items: center;
             justify-content: center;
             overflow: hidden;
-            background-image: repeating-linear-gradient(0deg, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 1px, transparent 1px, transparent 2px);
+            background-image: repeating-linear-gradient(0deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 2px);
             background-size: 100% 3px;
         }
 
+        /* طبقة التشويش */
         .glitch-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             pointer-events: none; z-index: 999; opacity: 0;
         }
         .active-glitch { animation: flash 0.15s infinite; opacity: 1; }
-        @keyframes flash { 0% { background: rgba(255,0,0,0.1); } 50% { background: rgba(0,242,255,0.1); } 100% { background: transparent; } }
+        @keyframes flash { 
+            0% { background: rgba(255,0,0,0.05); } 
+            50% { background: rgba(0,242,255,0.05); } 
+            100% { background: transparent; } 
+        }
 
         .gate-card {
-            border: 1px solid #111;
-            padding: 60px;
-            background: rgba(2, 2, 2, 0.95);
+            border: 1px solid #1a1a1a;
+            padding: 60px 40px;
+            background: rgba(2, 2, 2, 0.98);
             text-align: center;
             position: relative;
             box-shadow: 0 0 40px rgba(0, 242, 255, 0.05);
-            transition: 0.3s;
-            max-width: 500px;
+            max-width: 450px;
+            width: 90%;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
         .gate-card:hover { 
             border-color: var(--cyan); 
             box-shadow: 0 0 60px rgba(0, 242, 255, 0.2);
-            transform: skewY(-1deg);
+            transform: scale(1.02);
         }
 
-        h1 { font-size: 1.8rem; color: var(--cyan); margin-bottom: 10px; letter-spacing: 5px; }
-        h2 { font-size: 1.2rem; color: #444; margin-bottom: 30px; font-weight: normal; }
+        h1 { font-size: 1.6rem; color: var(--cyan); margin-bottom: 5px; letter-spacing: 4px; }
+        h2 { font-size: 1.1rem; color: #444; margin-bottom: 25px; }
         
-        .price-tag { font-size: 4.5rem; color: #fff; margin: 20px 0; text-shadow: 4px 4px var(--red); }
+        .price-tag { font-size: 4rem; color: #fff; margin-bottom: 5px; text-shadow: 3px 3px var(--red); }
+
+        /* عداد المبيعات المتزايد */
+        .sales-counter {
+            font-family: 'Orbitron';
+            color: #555;
+            font-size: 0.9rem;
+            margin-bottom: 30px;
+            letter-spacing: 2px;
+        }
+        .sales-count { color: var(--cyan); text-shadow: 0 0 5px var(--cyan); }
 
         .buy-button {
             background: transparent; color: var(--cyan); border: 2px solid var(--cyan);
-            padding: 20px 50px; font-weight: 900; font-size: 1.2rem;
+            padding: 18px 45px; font-weight: 900; font-size: 1.1rem;
             text-transform: uppercase; transition: 0.2s;
             box-shadow: 0 0 15px var(--cyan);
+            cursor: none;
         }
 
         .buy-button:hover { background: var(--cyan); color: #000; box-shadow: 0 0 30px var(--cyan); }
 
+        /* مؤشر الماوس (يعمل على جميع المتصفحات) */
         #custom-cursor {
-            position: fixed; width: 20px; height: 20px; background: var(--cyan);
+            position: fixed; width: 15px; height: 15px; background: var(--cyan);
             border-radius: 50%; pointer-events: none; transform: translate(-50%, -50%);
             z-index: 10000; mix-blend-mode: difference;
+            box-shadow: 0 0 10px var(--cyan);
         }
 
-        .warning-text { position: absolute; bottom: 20px; font-size: 0.6rem; color: #222; letter-spacing: 3px; }
+        .system-log { position: absolute; bottom: 20px; font-size: 0.6rem; color: #1a1a1a; letter-spacing: 2px; }
     </style>
 </head>
 <body onmousemove="syncCursor(event)" onclick="triggerEffect()">
@@ -77,53 +98,77 @@
     <div class="gate-card">
         <h1>UNCLASSIFIED FILE</h1>
         <h2>秘密言語文件 - 限制訪問</h2>
-        <p style="color: #666; margin-bottom: 20px;">Accessing this data may cause permanent cognitive dissonance.</p>
+        
         <div class="price-tag">$4.99</div>
+        
+        <div class="sales-counter">
+            PURCHASES: <span id="sales-val" class="sales-count">11,239</span>
+        </div>
+
         <button class="buy-button">PURCHASE ACCESS</button>
     </div>
 
-    <div class="warning-text">SYSTEM_STATUS: COMPROMISED | 系統狀態：已損壞</div>
+    <div class="system-log">ENCRYPTED_LINK_STABLE // 系統穩定</div>
 
     <script>
         const glitch = document.getElementById('glitch');
         const cursor = document.getElementById('custom-cursor');
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const salesElement = document.getElementById('sales-val');
+        
+        // 1. نظام عداد المشتريات المتزايد
+        let currentSales = 11239;
+        setInterval(() => {
+            // إضافة رقم عشوائي بين 1 و 3 كل 10 ثوانٍ
+            currentSales += Math.floor(Math.random() * 3) + 1;
+            salesElement.innerText = currentSales.toLocaleString();
+            
+            // وميض خفيف للعداد عند الزيادة
+            salesElement.style.color = '#fff';
+            setTimeout(() => salesElement.style.color = 'var(--cyan)', 100);
+        }, 10000);
+
+        // 2. معالجة الصوت لجميع المتصفحات (بما في ذلك Safari)
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        const audioCtx = new AudioContext();
 
         function playGhostSound(freq) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.type = 'sine';
             osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-            gain.gain.setValueAtTime(0.02, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.01, audioCtx.currentTime);
             osc.connect(gain); gain.connect(audioCtx.destination);
-            osc.start(); osc.stop(audioCtx.currentTime + 0.2);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.1);
         }
 
+        // 3. مزامنة المؤشر
         function syncCursor(e) {
             cursor.style.left = e.clientX + 'px';
             cursor.style.top = e.clientY + 'px';
-            if(Math.random() > 0.98) playGhostSound(Math.random() * 200);
+            if(Math.random() > 0.99) playGhostSound(150);
         }
 
+        // 4. تأثيرات النقر
         function triggerEffect() {
             glitch.classList.add('active-glitch');
-            playGhostSound(50);
-            setTimeout(() => glitch.classList.remove('active-glitch'), 400);
+            playGhostSound(60);
+            setTimeout(() => glitch.classList.remove('active-glitch'), 300);
             
-            // Randomly change text to Chinese on click
+            // تغيير النص لحظياً للصينية
             const h1 = document.querySelector('h1');
             const original = h1.innerText;
-            h1.innerText = "你在看什麼？";
-            setTimeout(() => h1.innerText = original, 800);
+            h1.innerText = "死亡門戶"; // بوابة الموت
+            setTimeout(() => h1.innerText = original, 500);
         }
 
-        // Periodic Glitch
+        // تشويش عشوائي دوري
         setInterval(() => {
-            if(Math.random() > 0.8) {
+            if(Math.random() > 0.85) {
                 glitch.classList.add('active-glitch');
-                setTimeout(() => glitch.classList.remove('active-glitch'), 150);
+                setTimeout(() => glitch.classList.remove('active-glitch'), 100);
             }
-        }, 4000);
+        }, 5000);
     </script>
 </body>
 </html>
