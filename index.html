@@ -3,152 +3,111 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>خزنة المشتريات | FARES VAULT</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&family=Orbitron:wght@500&display=swap" rel="stylesheet">
+    <title>MAMG ARCHIVE | أرشفة المامجي</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@200;700&family=Syncopate:wght@700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --neon: #00f2ff;
-            --dark-bg: #050505;
-            --glass-bg: rgba(255, 255, 255, 0.05);
-            --border: rgba(0, 242, 255, 0.2);
+            --neon-gold: #ffcc00;
+            --deep-dark: #0a0a0a;
+            --panel-bg: rgba(20, 20, 20, 0.8);
+            --border: 1px solid rgba(255, 204, 0, 0.2);
         }
 
         body {
-            background-color: var(--dark-bg);
-            color: #fff;
-            font-family: 'Cairo', sans-serif;
-            margin: 0; padding: 20px;
+            margin: 0; background: var(--deep-dark); color: #fff;
+            font-family: 'Cairo', sans-serif; overflow-x: hidden;
+            background-image: radial-gradient(circle at 10% 20%, rgba(255, 204, 0, 0.05) 0%, transparent 50%);
         }
 
-        .vault-header {
-            text-align: center; margin-bottom: 40px; padding: 20px;
-            border-bottom: 1px dashed var(--border);
+        /* نظام التوافق التلقائي للغات والدول */
+        header {
+            padding: 30px; display: flex; justify-content: space-between; align-items: center;
+            border-bottom: var(--border); backdrop-filter: blur(20px);
         }
 
-        .vault-header h1 {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 24px; color: var(--neon); text-shadow: 0 0 10px var(--neon);
+        .m-logo { font-family: 'Syncopate', sans-serif; font-size: 28px; color: var(--neon-gold); text-shadow: 0 0 20px rgba(255, 204, 0, 0.4); }
+
+        .location-badge { font-size: 10px; color: var(--neon-gold); border: 1px solid var(--neon-gold); padding: 4px 10px; border-radius: 50px; }
+
+        .container { padding: 40px 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 30px; }
+
+        /* بطاقة كتاب المامجي النادر */
+        .mamg-card {
+            background: var(--panel-bg); border-radius: 0 40px 0 40px; border: var(--border);
+            padding: 30px; position: relative; transition: 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden; backdrop-filter: blur(10px);
         }
 
-        /* حاوية الخزنة */
-        .vault-container {
-            max-width: 600px; margin: 0 auto;
+        .mamg-card:hover { transform: skewX(-2deg); border-color: var(--neon-gold); box-shadow: 10px 10px 0px var(--neon-gold); }
+
+        .book-id { font-family: 'Syncopate'; font-size: 9px; opacity: 0.4; }
+        .book-title { font-size: 22px; font-weight: 700; margin: 15px 0; color: #fff; }
+        .book-desc { font-size: 12px; color: #888; line-height: 1.8; margin-bottom: 25px; }
+
+        .price-row { display: flex; justify-content: space-between; align-items: center; }
+        .price { font-size: 24px; font-weight: 700; color: var(--neon-gold); }
+        .currency { font-size: 12px; opacity: 0.6; margin-right: 5px; }
+
+        .action-btn {
+            background: none; border: 1px solid var(--neon-gold); color: var(--neon-gold);
+            padding: 12px 30px; border-radius: 0 15px 0 15px; font-weight: 700;
+            cursor: pointer; transition: 0.3s;
         }
 
-        /* بطاقة المنتج الرقمي داخل الخزنة */
-        .vault-item {
-            background: var(--glass-bg);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 20px;
-            position: relative;
-            overflow: hidden;
-        }
+        .action-btn:hover { background: var(--neon-gold); color: #000; }
 
-        .item-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .item-title { font-weight: 700; color: #fff; }
-        .purchase-date { font-size: 11px; color: #64748b; }
-
-        /* منطقة كود التفعيل */
-        .code-area {
-            background: rgba(0, 0, 0, 0.4);
-            border-radius: 10px;
-            padding: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .serial-code {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 16px;
-            color: var(--neon);
-            letter-spacing: 2px;
-        }
-
-        .copy-btn {
-            background: var(--neon);
-            color: #000;
-            border: none;
-            padding: 5px 15px;
-            border-radius: 6px;
-            font-size: 12px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: 0.3s;
-        }
-
-        .copy-btn:active { transform: scale(0.9); }
-
-        /* حالة المنتج */
-        .status-badge {
-            font-size: 10px;
-            padding: 4px 10px;
-            border-radius: 20px;
-            background: rgba(0, 255, 136, 0.1);
-            color: #00ff88;
-            border: 1px solid #00ff88;
-        }
-
+        /* تأثير المسح الضوئي */
+        .scan-line { position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: var(--neon-gold); opacity: 0.1; animation: scan 4s infinite linear; }
+        @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
     </style>
 </head>
 <body>
 
-    <div class="vault-header">
-        <h1>DIGITAL VAULT v3.0</h1>
-        <p style="font-size: 12px; opacity: 0.5;">مرحباً فارس، منتجاتك الرقمية مؤمنة هنا</p>
-    </div>
+    <header>
+        <div class="m-logo">MAMG.X</div>
+        <div id="geo-info" class="location-badge">جاري تحديد الموقع...</div>
+    </header>
 
-    <div class="vault-container">
-        
-        <div class="vault-item">
-            <div class="item-info">
-                <div>
-                    <div class="item-title">Windows 11 Pro Key</div>
-                    <div class="purchase-date">تم الشراء: 2026/02/06</div>
-                </div>
-                <div class="status-badge">فعال</div>
-            </div>
-            <div class="code-area">
-                <span class="serial-code" id="code1">XXXX-5521-FARS-2026</span>
-                <button class="copy-btn" onclick="copyCode('code1')">نسخ</button>
-            </div>
+    <div class="container" id="books-grid">
         </div>
-
-        <div class="vault-item">
-            <div class="item-info">
-                <div>
-                    <div class="item-title">Canva Pro Lifetime</div>
-                    <div class="purchase-date">تم الشراء: 2026/01/15</div>
-                </div>
-                <div class="status-badge">فعال</div>
-            </div>
-            <div class="code-area">
-                <span class="serial-code" id="code2">PREM-CNVA-9901-X</span>
-                <button class="copy-btn" onclick="copyCode('code2')">نسخ</button>
-            </div>
-        </div>
-
-    </div>
 
     <script>
-        function copyCode(id) {
-            const codeText = document.getElementById(id).innerText;
-            navigator.clipboard.writeText(codeText);
+        // ملفات وكتب المامجي بأسعار السوق المحدثة 2026
+        const mamgBooks = [
+            { id: "M-01", title: "أساسيات المامجي الصرف", price: 150, desc: "الدليل الشامل لفهم الهياكل الأساسية لنظام المامجي وكيفية التعامل مع الملفات الأصلية." },
+            { id: "M-02", title: "خوارزميات التشفير المتقدمة", price: 290, desc: "كيفية حماية بيانات المامجي وتشفير الأصول الرقمية بمستويات عسكرية." },
+            { id: "M-03", title: "أسرار التجارة الرقمية", price: 199, desc: "استراتيجيات بيع المنتجات الرقمية وتحقيق أعلى عائد في أسواق المامجي." }
+        ];
+
+        // نظام ذكي للكشف عن الموقع والعملة
+        function initStore() {
+            const geoBadge = document.getElementById('geo-info');
+            const grid = document.getElementById('books-grid');
             
-            // تغيير نص الزر مؤقتاً للتفاعل مع المستخدم
-            const btn = event.target;
-            const originalText = btn.innerText;
-            btn.innerText = "تم النسخ!";
-            btn.style.background = "#00ff88";
-            
-            setTimeout(() => {
-                btn.innerText = originalText;
-                btn.style.background = "#00f2ff";
-            }, 2000);
+            // محاكاة كشف الموقع (في الواقع نستخدم API مثل ipapi)
+            const userCountry = "السعودية"; 
+            const currency = "ر.س";
+            geoBadge.innerText = `المنطقة: ${userCountry} | العملة: ${currency}`;
+
+            grid.innerHTML = mamgBooks.map(book => `
+                <div class="mamg-card">
+                    <div class="scan-line"></div>
+                    <div class="book-id">VAULT_REF: ${book.id}</div>
+                    <div class="book-title">${book.title}</div>
+                    <p class="book-desc">${book.desc}</p>
+                    <div class="price-row">
+                        <div class="price">${book.price}<span class="currency">${currency}</span></div>
+                        <button class="action-btn" onclick="buy('${book.title}')">امتلاك الكتاب</button>
+                    </div>
+                </div>
+            `).join('');
         }
+
+        function buy(name) {
+            alert(`نظام المامجي: جاري تأمين ملفات [${name}] ونقلها لخزنتك الرقمية...`);
+        }
+
+        window.onload = initStore;
     </script>
 </body>
 </html>
