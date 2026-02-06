@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MAMG ARENA | التطوير المركز</title>
+    <title>MAMG CIRCLES | الأقراص المتصادمة</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Cairo:wght@700&display=swap" rel="stylesheet">
     <style>
         :root { --neon: #00f2ff; --pink: #ff00ff; --bg: #050508; }
@@ -15,134 +15,107 @@
             background-image: radial-gradient(circle, #1a1a2e 0%, #000 100%);
         }
 
-        /* HUD - مطابقة للصورة التي أرفقتها */
-        .hud {
-            width: 100%; padding: 30px; display: flex; justify-content: space-around;
-            z-index: 100;
-        }
-        .stat-box {
-            background: rgba(0,0,0,0.4); border: 2px solid var(--neon);
-            padding: 15px 25px; border-radius: 15px; min-width: 140px; text-align: center;
-            box-shadow: 0 0 15px rgba(0, 242, 255, 0.1);
-        }
-        .label { font-size: 14px; color: var(--neon); font-family: 'Cairo'; margin-bottom: 5px; }
-        .value { font-size: 28px; font-family: 'Orbitron'; font-weight: 900; }
+        .hud { width: 100%; padding: 20px; display: flex; justify-content: space-around; z-index: 100; }
+        .stat-box { background: rgba(0,0,0,0.5); border: 1px solid var(--neon); padding: 10px; border-radius: 12px; min-width: 100px; text-align: center; font-family: 'Orbitron'; }
 
-        .arena { flex-grow: 1; position: relative; perspective: 1200px; width: 100%; }
+        .arena { flex-grow: 1; position: relative; width: 100%; display: flex; align-items: center; justify-content: center; gap: 50px; }
 
-        /* البطاقة المركزية */
-        .card {
-            width: 160px; height: 220px; background: #111;
-            border: 3px solid var(--neon); border-radius: 15px;
-            position: absolute; top: 50%; left: 50%;
-            transform: translate(-50%, -50%) rotateY(0deg);
-            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        /* الأقراص الدائرية */
+        .disk {
+            width: 140px; height: 140px; border-radius: 50%;
+            background: #111; border: 4px solid var(--neon);
+            position: relative; transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 0 30px rgba(0, 242, 255, 0.3);
-            font-family: 'Orbitron'; font-size: 24px; letter-spacing: 2px;
-        }
-        .card.flipped { transform: translate(-50%, -50%) rotateY(180deg); border-color: var(--pink); box-shadow: 0 0 40px var(--pink); }
-
-        /* اليد (مبنية بـ CSS لضمان عدم الاختفاء) */
-        .hand-element {
-            position: absolute; width: 120px; height: 160px;
-            background: linear-gradient(to bottom, #333, #111);
-            border-radius: 20px 20px 50px 50px;
-            bottom: -300px; left: 50%; transform: translateX(-50%);
-            z-index: 200; border: 2px solid var(--neon);
-            box-shadow: 0 0 20px var(--neon);
-        }
-        .hand-element.strike-anim { animation: fast-strike 0.4s ease-out; }
-
-        @keyframes fast-strike {
-            0% { bottom: -300px; }
-            45% { bottom: 35%; transform: translateX(-50%) scale(1.4); }
-            100% { bottom: -300px; }
+            box-shadow: 0 0 20px rgba(0, 242, 255, 0.3);
+            font-weight: bold;
         }
 
-        .shake { animation: v-shake 0.2s; }
-        @keyframes v-shake {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05) translate(5px, -5px); }
-            100% { transform: scale(1); }
+        /* أنيميشن القفز والضرب */
+        .jump-attack { animation: jump-hit 0.6s ease-in-out; }
+
+        @keyframes jump-hit {
+            0% { transform: scale(1) translateY(0); z-index: 10; }
+            40% { transform: scale(1.5) translateY(-100px); z-index: 50; } /* للأعلى */
+            60% { transform: scale(1.2) translateY(0); z-index: 50; } /* النزول والضرب */
+            100% { transform: scale(1) translateY(0); }
         }
 
-        .lang-btn { position: fixed; bottom: 20px; left: 20px; background: none; border: 1px solid #333; color: #555; padding: 8px 15px; border-radius: 5px; cursor: pointer; }
+        .disk.flipped { transform: rotateX(180deg); border-color: var(--pink); box-shadow: 0 0 25px var(--pink); }
+
+        .label { position: absolute; bottom: -30px; font-size: 12px; color: var(--neon); }
+        
+        #impact-fx {
+            position: absolute; width: 100px; height: 100px; border-radius: 50%;
+            background: white; opacity: 0; pointer-events: none; transform: scale(0);
+        }
+        .flash { animation: flash-anim 0.3s; }
+        @keyframes flash-anim {
+            0% { transform: scale(0); opacity: 0.8; }
+            100% { transform: scale(3); opacity: 0; }
+        }
     </style>
 </head>
-<body onclick="game.hit()">
+<body>
 
     <div class="hud">
-        <div class="stat-box"><div class="label" id="txt-flips">القلبات</div><div class="value" id="val-score">0</div></div>
-        <div class="stat-box"><div class="label" id="txt-round">الجولة</div><div class="value" id="val-round">1/3</div></div>
+        <div class="stat-box"><div>ROUND</div><div>1/3</div></div>
+        <div class="stat-box"><div>WINS</div><div id="score">0</div></div>
     </div>
 
-    <div class="arena" id="arena">
-        <div class="card" id="main-card">MAMG</div>
-        <div class="hand-element" id="visual-hand"></div>
-    </div>
+    <div class="arena" id="main-arena">
+        <div class="disk" id="player-disk" onclick="app.attack()">
+            MAMG
+            <div class="label">لاعبك</div>
+        </div>
 
-    <button class="lang-btn" onclick="game.switchLang(event)">EN / AR</button>
+        <div class="disk" id="enemy-disk">
+            ENEMY
+            <div class="label">المنافس</div>
+        </div>
+
+        <div id="impact-fx"></div>
+    </div>
 
     <script>
-        const game = {
+        const app = {
             score: 0,
-            round: 1,
-            locked: false,
-            lang: 'ar',
-            
-            hit: function() {
-                if (this.locked || this.round > 3) return;
-                this.locked = true;
+            isLocked: false,
 
-                const hand = document.getElementById('visual-hand');
-                const card = document.getElementById('main-card');
-                const arena = document.getElementById('arena');
+            attack: function() {
+                if (this.isLocked) return;
+                this.isLocked = true;
 
-                hand.classList.add('strike-anim');
+                const pDisk = document.getElementById('player-disk');
+                const eDisk = document.getElementById('enemy-disk');
+                const fx = document.getElementById('impact-fx');
 
-                // توقيت التصادم
+                // 1. القفز والضرب
+                pDisk.classList.add('jump-attack');
+
+                // 2. لحظة الاصطدام (عند 0.4 ثانية)
                 setTimeout(() => {
-                    arena.classList.add('shake');
-                    
+                    // إظهار فلاش الاصطدام
+                    fx.style.left = (eDisk.offsetLeft + 20) + "px";
+                    fx.style.top = (eDisk.offsetTop + 20) + "px";
+                    fx.classList.add('flash');
+
+                    // منطق قلب قرص المنافس
                     if (Math.random() > 0.4) {
-                        card.classList.toggle('flipped');
-                        if (card.classList.contains('flipped')) {
+                        eDisk.classList.toggle('flipped');
+                        if (eDisk.classList.contains('flipped')) {
                             this.score++;
-                            document.getElementById('val-score').innerText = this.score;
+                            document.getElementById('score').innerText = this.score;
                         }
                     }
 
-                    // نظام الجولات: كل ضربة تزيد "جزء" من الجولة أو حسب منطقك
-                    // هنا سنعتبر كل 5 ضربات جولة كاملة كمثال تطويري
-                    if (this.score % 5 === 0 && this.score !== 0) {
-                        this.nextRound();
-                    }
-
-                    setTimeout(() => arena.classList.remove('shake'), 200);
-                }, 180);
-
-                setTimeout(() => {
-                    hand.classList.remove('strike-anim');
-                    this.locked = false;
+                    setTimeout(() => fx.classList.remove('flash'), 300);
                 }, 400);
-            },
 
-            nextRound: function() {
-                if (this.round < 3) {
-                    this.round++;
-                    document.getElementById('val-round').innerText = this.round + "/3";
-                } else {
-                    alert(this.lang === 'ar' ? "انتهت اللعبة! نتيجتك: " + this.score : "Game Over! Score: " + this.score);
-                }
-            },
-
-            switchLang: function(e) {
-                e.stopPropagation();
-                this.lang = (this.lang === 'ar') ? 'en' : 'ar';
-                document.getElementById('txt-flips').innerText = this.lang === 'ar' ? "القلبات" : "FLIPS";
-                document.getElementById('txt-round').innerText = this.lang === 'ar' ? "الجولة" : "ROUND";
-                document.documentElement.dir = (this.lang === 'ar') ? 'rtl' : 'ltr';
+                // 3. إنهاء الحركة
+                setTimeout(() => {
+                    pDisk.classList.remove('jump-attack');
+                    this.isLocked = false;
+                }, 600);
             }
         };
     </script>
