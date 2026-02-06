@@ -2,57 +2,147 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>1 SECOND CHALLENGE</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ONE SECOND GLOBAL | التحدي العالمي</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&family=Orbitron:wght@700&display=swap" rel="stylesheet">
     <style>
-        :root { --neon: #ff0055; }
-        body { background: #050505; color: white; font-family: 'Segoe UI', sans-serif; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 0; overflow: hidden; }
-        
-        .timer { font-size: 80px; font-weight: bold; font-family: monospace; margin-bottom: 20px; color: var(--neon); text-shadow: 0 0 20px var(--neon); }
-        
-        .main-btn {
-            width: 200px; height: 200px; border-radius: 50%; border: 5px solid var(--neon);
-            background: none; color: white; font-size: 24px; cursor: pointer;
-            transition: 0.2s; box-shadow: 0 0 15px var(--neon);
+        :root {
+            --neon: #ff0055;
+            --bg: #050505;
+            --surface: #111;
         }
+
+        /* تنسيق يدعم جميع أحجام الشاشات والمتصفحات */
+        * { box-sizing: border-box; transition: all 0.3s ease; }
         
-        .main-btn:active { transform: scale(0.9); box-shadow: 0 0 50px var(--neon); }
-        
-        .history { margin-top: 50px; font-size: 14px; color: #444; text-align: center; }
-        .success-msg { color: #00ff88; display: none; margin-top: 20px; }
+        body {
+            margin: 0; background-color: var(--bg); color: white;
+            font-family: 'Cairo', sans-serif; height: 100vh;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            overflow: hidden;
+        }
+
+        /* الهيدر العالمي (دعم اللغات) */
+        .lang-bar {
+            position: fixed; top: 20px; left: 20px;
+            font-size: 12px; color: #444; letter-spacing: 1px;
+        }
+
+        .timer {
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(30px, 10vw, 80px); /* حجم خط مرن للموبايل والكمبيوتر */
+            font-weight: bold; color: var(--neon);
+            text-shadow: 0 0 20px rgba(255, 0, 85, 0.4);
+            margin-bottom: 40px;
+        }
+
+        .main-btn {
+            width: clamp(150px, 30vw, 220px);
+            height: clamp(150px, 30vw, 220px);
+            border-radius: 50%; border: 4px solid var(--neon);
+            background: none; color: white; font-size: 20px;
+            cursor: pointer; font-family: 'Cairo'; font-weight: 700;
+            box-shadow: 0 0 15px var(--neon), inset 0 0 10px var(--neon);
+            z-index: 10;
+        }
+
+        .main-btn:hover { background: rgba(255, 0, 85, 0.1); transform: scale(1.05); }
+        .main-btn:active { transform: scale(0.95); }
+        .main-btn:disabled { border-color: #333; color: #333; box-shadow: none; cursor: not-allowed; }
+
+        /* منطقة الإشعارات (بدون نوافذ منبثقة) - ستايل الموقع */
+        #status-area {
+            margin-top: 40px;
+            min-height: 60px;
+            width: 80%; max-width: 400px;
+            padding: 15px; border-radius: 12px;
+            text-align: center; font-size: 14px;
+            background: var(--surface);
+            border: 1px solid #222;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        .msg-success { color: #00ff88; border-color: #00ff88 !important; box-shadow: 0 0 10px rgba(0, 255, 136, 0.2); }
+        .msg-error { color: #ffbb00; border-color: #ffbb00 !important; }
+
+        .footer-info {
+            position: fixed; bottom: 20px; color: #333;
+            font-size: 10px; font-family: 'Orbitron';
+        }
+
     </style>
 </head>
 <body>
 
+    <div class="lang-bar">GLOBAL ACCESS: AR | EN | FR | JP | RU</div>
+
     <div class="timer" id="clock">00:00:00.000</div>
     
-    <button class="main-btn" id="hitBtn" onclick="checkTiming()">اضغط الآن!</button>
+    <button class="main-btn" id="hitBtn" onclick="executeChallenge()">تحدي الآن</button>
     
-    <div class="success-msg" id="msg">مذهل! لقد حققت توقيتاً عالمياً!</div>
-
-    <div class="history">
-        آخر فائز: <span style="color: #888;">فارس منذ 3 دقائق</span>
+    <div id="status-area">
+        بانتظار محاولتك.. لديك فرصة واحدة كل 24 ساعة.
     </div>
 
-    <script>
-        // ساعة دقيقة جداً بالأجزاء من الثانية
-        setInterval(() => {
-            const now = new Date();
-            const timeStr = now.getHours().toString().padStart(2, '0') + ":" + 
-                            now.getMinutes().toString().padStart(2, '0') + ":" + 
-                            now.getSeconds().toString().padStart(2, '0') + "." + 
-                            now.getMilliseconds().toString().padStart(3, '0');
-            document.getElementById('clock').innerText = timeStr;
-        }, 1);
+    <div class="footer-info">SYSTEM STATUS: OPERATIONAL v3.0.1</div>
 
-        function checkTiming() {
-            const btn = document.getElementById('hitBtn');
-            btn.disabled = true; // فرصة واحدة فقط
-            btn.style.opacity = "0.3";
-            btn.innerText = "انتهت المحاولة";
-            
-            // هنا يتم التحقق من الدقة وإرسالها للسيرفر
-            alert("تم تسجيل توقيتك! عد غداً للمحاولة مرة أخرى.");
+    <script>
+        /* 1. دعم جميع المتصفحات عبر RequestAnimationFrame لدقة عالية */
+        function updateClock() {
+            const now = new Date();
+            const h = String(now.getHours()).padStart(2, '0');
+            const m = String(now.getMinutes()).padStart(2, '0');
+            const s = String(now.getSeconds()).padStart(2, '0');
+            const ms = String(now.getMilliseconds()).padStart(3, '0');
+            document.getElementById('clock').innerText = `${h}:${m}:${s}.${ms}`;
+            requestAnimationFrame(updateClock);
         }
+        requestAnimationFrame(updateClock);
+
+        /* 2. التحقق من سلامة الأكواد ومنع الأخطاء */
+        function executeChallenge() {
+            const btn = document.getElementById('hitBtn');
+            const statusArea = document.getElementById('status-area');
+            
+            // تحقق منطقي لمنع تكرار الكود أو التداخل
+            if (btn.classList.contains('locked')) return;
+
+            try {
+                // قفل الزر فوراً
+                btn.disabled = true;
+                btn.classList.add('locked');
+
+                // التقاط التوقيت اللحظي
+                const finalTime = document.getElementById('clock').innerText;
+                
+                /* 4. الإخطار بنفس ستايل الموقع */
+                statusArea.className = "msg-success";
+                statusArea.innerHTML = `تم تسجيل توقيتك: <br><strong>${finalTime}</strong><br>عد غداً للمحاولة مرة أخرى.`;
+                
+                // حفظ الحالة محلياً لجعل الموقع "فعلياً" يحترم القاعدة
+                localStorage.setItem('last_attempt', new Date().getTime());
+
+            } catch (error) {
+                // معالجة الأخطاء الصامتة لضمان عدم توقف الموقع
+                statusArea.className = "msg-error";
+                statusArea.innerText = "حدث خطأ في مزامنة الوقت، حاول مجدداً.";
+                btn.disabled = false;
+            }
+        }
+
+        /* 3. منع أخطاء ترتيب الأكواد عند التحميل */
+        window.onload = () => {
+            const lastAttempt = localStorage.getItem('last_attempt');
+            if (lastAttempt) {
+                const dayInMs = 24 * 60 * 60 * 1000;
+                if (new Date().getTime() - lastAttempt < dayInMs) {
+                    const btn = document.getElementById('hitBtn');
+                    btn.disabled = true;
+                    btn.innerText = "مغلق";
+                    document.getElementById('status-area').innerText = "لقد استخدمت محاولتك اليوم. نراك غداً!";
+                }
+            }
+        };
     </script>
 </body>
 </html>
