@@ -3,157 +3,140 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GRID_01 | GLOBAL INTUITION SYSTEM</title>
+    <title>GRID_01 | GLOBAL INTUITION</title>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;700&family=Cairo:wght@700&display=swap" rel="stylesheet">
     <style>
         :root { --accent: #00f2ff; --bg: #000; --pos: #00ffcc; --neu: #bd00ff; --neg: #ff4d00; }
-        * { margin: 0; padding: 0; box-sizing: border-box; outline: none; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body { 
             background: var(--bg); color: #fff; 
             font-family: 'Space Grotesk', sans-serif; 
             height: 100vh; overflow: hidden;
             display: flex; align-items: center; justify-content: center;
-            transition: all 0.5s ease;
         }
 
-        /* الطبقة الشبكية الخلفية */
+        /* إصلاح الخلفية الشبكية التي كانت مفقودة في صورك */
         .bg-layer {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-image: radial-gradient(circle at 2px 2px, rgba(0,242,255,0.1) 1px, transparent 0);
-            background-size: 40px 40px; z-index: -1;
-            opacity: 0.5;
+            background-image: radial-gradient(circle at 1px 1px, rgba(0,242,255,0.1) 1px, transparent 0);
+            background-size: 30px 30px; z-index: -1;
         }
 
-        .container { text-align: center; width: 100%; max-width: 800px; padding: 20px; z-index: 10; }
+        .container { text-align: center; width: 100%; max-width: 600px; padding: 20px; z-index: 10; }
 
-        /* العناصر المشتركة */
-        .status { color: var(--accent); font-size: 10px; letter-spacing: 5px; margin-bottom: 25px; text-transform: uppercase; }
-        .title { font-size: clamp(1.5rem, 5vw, 2.5rem); font-weight: 700; line-height: 1.2; margin-bottom: 50px; }
+        .status-tag { color: var(--accent); font-size: 10px; letter-spacing: 5px; margin-bottom: 20px; text-transform: uppercase; }
+        .hero-title { font-size: 26px; font-weight: 700; line-height: 1.2; margin-bottom: 40px; }
 
-        /* 1. الواجهة الرئيسية (النواة) */
-        .core {
-            width: 150px; height: 150px;
+        /* الكرة النابضة - قلب GRID_01 */
+        .pulse-core {
+            width: 140px; height: 140px;
             background: radial-gradient(circle, var(--accent) 0%, transparent 75%);
             border: 1px solid rgba(0,242,255,0.2);
             border-radius: 50%; margin: 0 auto;
             animation: pulse 4s infinite ease-in-out;
-            cursor: pointer; transition: 0.3s;
+            cursor: pointer;
         }
-        @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 0.4; } 50% { transform: scale(1.1); opacity: 0.8; box-shadow: 0 0 50px rgba(0,242,255,0.3); } }
 
-        /* 2. واجهة خيارات الحدس */
-        .options { display: none; gap: 30px; justify-content: center; animation: slideUp 0.6s ease forwards; }
-        .choice { 
-            width: 90px; height: 90px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.1); 
-            cursor: pointer; display: flex; align-items: center; justify-content: center; 
-            font-size: 9px; font-weight: 700; letter-spacing: 1px; transition: 0.4s;
+        @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 0.4; } 50% { transform: scale(1.15); opacity: 0.9; box-shadow: 0 0 60px rgba(0,242,255,0.3); } }
+
+        /* واجهة الخيارات */
+        .options-grid { display: none; gap: 20px; justify-content: center; animation: fadeInUp 0.5s ease; }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+
+        .sphere-btn { 
+            width: 80px; height: 80px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.1); 
+            cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 700; transition: 0.3s;
         }
-        .choice:hover { transform: translateY(-10px) scale(1.1); box-shadow: 0 15px 30px currentColor; }
-        .pos { background: rgba(0, 255, 204, 0.15); color: var(--pos); }
-        .neu { background: rgba(189, 0, 255, 0.15); color: var(--neu); }
-        .neg { background: rgba(255, 77, 0, 0.15); color: var(--neg); }
+        .pos { background: rgba(0, 255, 204, 0.1); color: var(--pos); }
+        .neu { background: rgba(189, 0, 255, 0.1); color: var(--neu); }
+        .neg { background: rgba(255, 77, 0, 0.1); color: var(--neg); }
 
-        /* 3. لوحة النتائج (الداشبورد) */
-        .dashboard { display: none; flex-direction: column; align-items: center; animation: fadeIn 1s ease; }
-        .gauge-row { display: flex; justify-content: space-around; width: 100%; margin: 40px 0; }
-        .gauge { text-align: center; flex: 1; }
-        .bar-wrap { width: 12px; height: 160px; background: rgba(255,255,255,0.03); margin: 15px auto; position: relative; border-radius: 10px; overflow: hidden; }
-        .fill-bar { position: absolute; bottom: 0; width: 100%; height: 0; transition: height 2s cubic-bezier(0.19, 1, 0.22, 1); }
-        .val { font-size: 1.4rem; font-weight: 700; color: #fff; }
-        .lbl { font-size: 0.6rem; color: #555; letter-spacing: 2px; margin-top: 10px; }
+        /* لوحة النتائج العالمية */
+        .dash-results { display: none; flex-direction: column; width: 100%; animation: fadeIn 1s ease; }
+        .bar-container { display: flex; justify-content: space-around; height: 200px; margin: 40px 0; align-items: flex-end; }
+        .bar-group { text-align: center; flex: 1; }
+        .bar-track { width: 10px; height: 150px; background: rgba(255,255,255,0.05); margin: 10px auto; position: relative; border-radius: 10px; overflow: hidden; }
+        .bar-fill { position: absolute; bottom: 0; width: 100%; height: 0; transition: height 2s cubic-bezier(0.19, 1, 0.22, 1); }
 
-        /* مفتاح اللغات */
-        .lang-nav { position: fixed; top: 30px; right: 30px; display: flex; gap: 15px; }
-        .l-btn { background: none; border: 1px solid #222; color: #444; padding: 6px 12px; font-size: 10px; cursor: pointer; transition: 0.3s; }
-        .l-btn.active { color: var(--accent); border-color: var(--accent); }
-
-        @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        /* أزرار اللغة */
+        .lang-fixed { position: fixed; top: 30px; right: 30px; display: flex; gap: 10px; }
+        .l-link { background: none; border: 1px solid #222; color: #555; padding: 5px 12px; cursor: pointer; font-size: 10px; }
+        .l-link.active { color: var(--accent); border-color: var(--accent); }
     </style>
 </head>
 <body id="mainBody">
 
     <div class="bg-layer"></div>
 
-    <div class="lang-nav">
-        <button class="l-btn active" id="btn-en" onclick="setLang('en')">EN</button>
-        <button class="l-btn" id="btn-ar" onclick="setLang('ar')">AR</button>
+    <div class="lang-fixed">
+        <button class="l-link active" onclick="switchUI('en')">EN</button>
+        <button class="l-link" onclick="switchUI('ar')">AR</button>
     </div>
 
     <div class="container">
-        <div id="view-1">
-            <p class="status" id="st-1">NODES ACTIVE: 928,472</p>
-            <h1 class="title" id="tt-1">COLLECTIVE INTUITION:<br><span style="color:var(--accent)">[SYSTEM_READY]</span></h1>
-            <div class="core" onclick="toOptions()"></div>
+        <div id="step-1">
+            <p class="status-tag" id="st-1">NODES ACTIVE: 928,472</p>
+            <h1 class="hero-title" id="tt-1">COLLECTIVE INTUITION:<br><span style="color:var(--accent)">[SYSTEM_READY]</span></h1>
+            <div class="pulse-core" onclick="showOptions()"></div>
         </div>
 
-        <div class="options" id="view-2">
-            <div class="choice pos" onclick="toDash('Positive')">STABLE</div>
-            <div class="choice neu" onclick="toDash('Neutral')">UNCERTAIN</div>
-            <div class="choice neg" onclick="toDash('Volatile')">VOLATILE</div>
+        <div class="options-grid" id="step-2">
+            <div class="sphere-btn pos" onclick="showResults('STABLE')">STABLE</div>
+            <div class="sphere-btn neu" onclick="showResults('UNCERTAIN')">UNCERTAIN</div>
+            <div class="sphere-btn neg" onclick="showResults('VOLATILE')">VOLATILE</div>
         </div>
 
-        <div class="dashboard" id="view-3">
-            <p class="status" id="st-3">GLOBAL PULSE ANALYSIS</p>
-            <div class="gauge-row">
-                <div class="gauge">
-                    <div class="val" id="v1">64%</div>
-                    <div class="bar-wrap"><div class="fill-bar" id="f1" style="background:var(--pos)"></div></div>
-                    <div class="lbl" id="lb1">STABLE</div>
+        <div class="dash-results" id="step-3">
+            <p class="status-tag" id="st-3">GLOBAL PULSE ANALYSIS</p>
+            <div class="bar-container">
+                <div class="bar-group">
+                    <div style="font-size: 1.2rem; font-weight: 700;">64%</div>
+                    <div class="bar-track"><div class="bar-fill" id="f1" style="background:var(--pos)"></div></div>
+                    <p style="font-size:8px; color:#555;" id="lb1">STABLE</p>
                 </div>
-                <div class="gauge">
-                    <div class="val" id="v2">21%</div>
-                    <div class="bar-wrap"><div class="fill-bar" id="f2" style="background:var(--neu)"></div></div>
-                    <div class="lbl" id="lb2">UNCERTAIN</div>
+                <div class="bar-group">
+                    <div style="font-size: 1.2rem; font-weight: 700;">21%</div>
+                    <div class="bar-track"><div class="bar-fill" id="f2" style="background:var(--neu)"></div></div>
+                    <p style="font-size:8px; color:#555;" id="lb2">UNCERTAIN</p>
                 </div>
-                <div class="gauge">
-                    <div class="val" id="v3">15%</div>
-                    <div class="bar-wrap"><div class="fill-bar" id="f3" style="background:var(--neg)"></div></div>
-                    <div class="lbl" id="lb3">VOLATILE</div>
+                <div class="bar-group">
+                    <div style="font-size: 1.2rem; font-weight: 700;">15%</div>
+                    <div class="bar-track"><div class="bar-fill" id="f3" style="background:var(--neg)"></div></div>
+                    <p style="font-size:8px; color:#555;" id="lb3">VOLATILE</p>
                 </div>
             </div>
-            <p style="font-size:10px; color:#333; letter-spacing:3px;">NETWORK SYNC: 100% SUCCESSFUL</p>
+            <p style="font-size: 8px; color: #222; letter-spacing: 3px;" id="net-sync">NETWORK SYNC: 100% SUCCESSFUL</p>
         </div>
     </div>
 
     <script>
-        let currentL = 'en';
-
-        function setLang(l) {
-            currentL = l;
-            const isAr = l === 'ar';
+        function switchUI(lang) {
+            const isAr = lang === 'ar';
             document.getElementById('mainBody').dir = isAr ? 'rtl' : 'ltr';
             document.getElementById('mainBody').style.fontFamily = isAr ? 'Cairo' : 'Space Grotesk';
-            
-            // تحديث النصوص
             document.getElementById('st-1').innerText = isAr ? "العقد النشطة: 928,472" : "NODES ACTIVE: 928,472";
-            document.getElementById('tt-1').innerHTML = isAr ? "الحدس الجماعي:<br><span style='color:var(--accent)'>[النظام_جاهز]</span>" : "COLLECTIVE INTUITION:<br><span style='color:var(--accent)'>[SYSTEM_READY]</span>";
+            document.getElementById('tt-1').innerHTML = isAr ? "الحدس الجماعي:<br><span style='color:#00f2ff'>[النظام_جاهز]</span>" : "COLLECTIVE INTUITION:<br><span style='color:#00f2ff'>[SYSTEM_READY]</span>";
             document.getElementById('st-3').innerText = isAr ? "تحليل النبض العالمي" : "GLOBAL PULSE ANALYSIS";
             document.getElementById('lb1').innerText = isAr ? "مستقر" : "STABLE";
             document.getElementById('lb2').innerText = isAr ? "غير مؤكد" : "UNCERTAIN";
             document.getElementById('lb3').innerText = isAr ? "مضطرب" : "VOLATILE";
-
-            // تحديث الأزرار
-            document.getElementById('btn-en').classList.toggle('active', l === 'en');
-            document.getElementById('btn-ar').classList.toggle('active', l === 'ar');
+            document.getElementById('net-sync').innerText = isAr ? "مزامنة الشبكة: ناجحة بنسبة 100%" : "NETWORK SYNC: 100% SUCCESSFUL";
         }
 
-        function toOptions() {
-            document.getElementById('view-1').style.display = 'none';
-            document.getElementById('view-2').style.display = 'flex';
+        function showOptions() {
+            document.getElementById('step-1').style.display = 'none';
+            document.getElementById('step-2').style.display = 'flex';
         }
 
-        function toDash(type) {
-            document.getElementById('view-2').style.display = 'none';
-            document.getElementById('view-3').style.display = 'flex';
-            
-            // تحريك الأعمدة بعد ظهور اللوحة
+        function showResults(type) {
+            document.getElementById('step-2').style.display = 'none';
+            document.getElementById('step-3').style.display = 'flex';
             setTimeout(() => {
                 document.getElementById('f1').style.height = '64%';
                 document.getElementById('f2').style.height = '21%';
                 document.getElementById('f3').style.height = '15%';
-            }, 200);
+            }, 100);
         }
     </script>
 </body>
