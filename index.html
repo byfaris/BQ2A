@@ -3,8 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GRID_01 | GLOBAL INTUITION MAP</title>
+    <title>GRID_01 | 3D INTUITION GLOBE</title>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;700&family=Cairo:wght@700&display=swap" rel="stylesheet">
+    
+    <script src="//unpkg.com/three"></script>
+    <script src="//unpkg.com/globe.gl"></script>
+
     <style>
         :root { --accent: #00f2ff; --bg: #000; --pos: #00ffcc; --neu: #bd00ff; --neg: #ff4d00; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -13,20 +17,23 @@
             background: var(--bg); color: #fff; 
             font-family: 'Space Grotesk', sans-serif; 
             height: 100vh; overflow: hidden;
+        }
+
+        #app-interface {
+            position: relative; width: 100%; height: 100%;
             display: flex; align-items: center; justify-content: center;
+            z-index: 10; pointer-events: none;
         }
 
-        .bg-layer {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-image: radial-gradient(circle at 1px 1px, rgba(0,242,255,0.05) 1px, transparent 0);
-            background-size: 30px 30px; z-index: -1;
-        }
+        .ui-content { pointer-events: auto; text-align: center; width: 100%; padding: 20px; }
 
-        .container { text-align: center; width: 100%; max-width: 1000px; padding: 20px; z-index: 10; }
+        /* الكرة ثلاثية الأبعاد ستكون في الخلفية */
+        #globe-canvas { position: fixed; top: 0; left: 0; z-index: 1; }
+
         .status-tag { color: var(--accent); font-size: 10px; letter-spacing: 5px; margin-bottom: 20px; text-transform: uppercase; }
-        .hero-title { font-size: 24px; font-weight: 700; margin-bottom: 40px; }
+        .hero-title { font-size: 24px; font-weight: 700; margin-bottom: 50px; text-shadow: 0 0 20px rgba(0,242,255,0.5); }
 
-        /* المرحلة 1: النواة */
+        /* الأزرار المركزية */
         .pulse-core {
             width: 140px; height: 140px;
             background: radial-gradient(circle, var(--accent) 0%, transparent 75%);
@@ -37,87 +44,73 @@
         }
         @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 0.4; } 50% { transform: scale(1.1); opacity: 0.8; } }
 
-        /* المرحلة 2: الخيارات */
         .options-grid { display: none; gap: 20px; justify-content: center; animation: fadeInUp 0.5s ease; }
         .sphere-btn { 
-            width: 80px; height: 80px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.1); 
+            width: 85px; height: 85px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.1); 
             cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 700; transition: 0.3s;
         }
+        .sphere-btn:hover { transform: scale(1.1); box-shadow: 0 0 20px currentColor; }
         .pos { background: rgba(0, 255, 204, 0.1); color: var(--pos); }
         .neu { background: rgba(189, 0, 255, 0.1); color: var(--neu); }
         .neg { background: rgba(255, 77, 0, 0.1); color: var(--neg); }
 
-        /* المرحلة 3: الخريطة العالمية */
-        .map-results { display: none; flex-direction: column; width: 100%; animation: fadeIn 1.5s ease; }
-        
-        #world-map {
-            width: 100%; height: auto; max-height: 400px;
-            margin: 20px 0; fill: #111;
-            stroke: rgba(0, 242, 255, 0.2); stroke-width: 0.5;
-        }
+        /* التحكم باللغة */
+        .lang-nav { position: fixed; top: 30px; right: 30px; display: flex; gap: 10px; z-index: 100; }
+        .l-btn { background: rgba(0,0,0,0.6); border: 1px solid #222; color: #555; padding: 6px 14px; cursor: pointer; font-size: 10px; backdrop-filter: blur(5px); }
+        .l-btn.active { color: var(--accent); border-color: var(--accent); }
 
-        /* ألوان الدول بناءً على التصويت */
-        .c-stable { fill: var(--pos) !important; opacity: 0.6; }
-        .c-uncertain { fill: var(--neu) !important; opacity: 0.6; }
-        .c-volatile { fill: var(--neg) !important; opacity: 0.6; }
-
-        .legend { display: flex; justify-content: center; gap: 20px; margin-top: 20px; font-size: 8px; letter-spacing: 2px; }
+        /* وسيلة الإيضاح أسفل الكرة */
+        #map-legend { display: none; position: fixed; bottom: 40px; width: 100%; justify-content: center; gap: 20px; font-size: 8px; letter-spacing: 2px; z-index: 100; }
         .l-item { display: flex; align-items: center; gap: 5px; }
         .dot { width: 6px; height: 6px; border-radius: 50%; }
 
-        .lang-fixed { position: fixed; top: 30px; right: 30px; display: flex; gap: 10px; z-index: 100; }
-        .l-btn { background: none; border: 1px solid #222; color: #555; padding: 5px 12px; cursor: pointer; font-size: 10px; }
-        .l-btn.active { color: var(--accent); border-color: var(--accent); }
-
-        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body id="mainBody">
 
-    <div class="bg-layer"></div>
+    <div id="globe-canvas"></div>
 
-    <div class="lang-fixed">
+    <div class="lang-nav">
         <button class="l-btn active" id="btn-en" onclick="setLang('en')">EN</button>
         <button class="l-btn" id="btn-ar" onclick="setLang('ar')">AR</button>
     </div>
 
-    <div class="container">
-        <div id="step-1">
-            <p class="status-tag" id="st-1">NODES ACTIVE: 928,472</p>
-            <h1 class="hero-title" id="tt-1">COLLECTIVE INTUITION:<br><span style="color:var(--accent)">[SYSTEM_READY]</span></h1>
-            <div class="pulse-core" onclick="toStep2()"></div>
-        </div>
-
-        <div class="options-grid" id="step-2">
-            <div class="sphere-btn pos" onclick="toStep3('stable')">STABLE</div>
-            <div class="sphere-btn neu" onclick="toStep3('uncertain')">UNCERTAIN</div>
-            <div class="sphere-btn neg" onclick="toStep3('volatile')">VOLATILE</div>
-        </div>
-
-        <div class="map-results" id="step-3">
-            <p class="status-tag" id="st-3">GLOBAL INTUITION MAP</p>
+    <div id="app-interface">
+        <div class="ui-content">
             
-            <svg id="world-map" viewBox="0 0 1000 500" xmlns="http://www.w3.org/2000/svg">
-                <path id="na" d="M150,100 L300,100 L350,250 L200,300 Z" /> <path id="sa" d="M300,300 L400,300 L350,450 L250,400 Z" /> <path id="eu" d="M450,100 L550,100 L550,200 L450,200 Z" /> <path id="af" d="M450,220 L580,220 L550,400 L450,350 Z" /> <path id="as" d="M600,100 L900,100 L850,350 L600,350 Z" /> <path id="au" d="M800,380 L900,380 L880,450 L780,450 Z" /> </svg>
-
-            <div class="legend">
-                <div class="l-item"><div class="dot" style="background:var(--pos)"></div> <span id="lb1">STABLE</span></div>
-                <div class="l-item"><div class="dot" style="background:var(--neu)"></div> <span id="lb2">UNCERTAIN</span></div>
-                <div class="l-item"><div class="dot" style="background:var(--neg)"></div> <span id="lb3">VOLATILE</span></div>
+            <div id="step-1">
+                <p class="status-tag" id="st-1">928,472 PERSPECTIVES LIVE</p>
+                <h1 class="hero-title" id="tt-1">GLOBAL INTUITION HUB:<br><span style="color:var(--accent)">[SYSTEM_READY]</span></h1>
+                <div class="pulse-core" onclick="toStep2()"></div>
             </div>
-            <p style="font-size: 8px; color: #222; margin-top: 30px; letter-spacing: 2px;">LIVE DATA FEED: ACTIVE</p>
+
+            <div class="options-grid" id="step-2">
+                <div class="sphere-btn pos" onclick="initGlobe('stable')">STABLE</div>
+                <div class="sphere-btn neu" onclick="initGlobe('uncertain')">UNCERTAIN</div>
+                <div class="sphere-btn neg" onclick="initGlobe('volatile')">VOLATILE</div>
+            </div>
+
         </div>
     </div>
 
+    <div id="map-legend">
+        <div class="l-item"><div class="dot" style="background:var(--pos)"></div> <span id="lb1">STABLE</span></div>
+        <div class="l-item"><div class="dot" style="background:var(--neu)"></div> <span id="lb2">UNCERTAIN</span></div>
+        <div class="l-item"><div class="dot" style="background:var(--neg)"></div> <span id="lb3">VOLATILE</span></div>
+    </div>
+
     <script>
+        let currentL = 'en';
+        let world;
+
         function setLang(l) {
+            currentL = l;
             const isAr = l === 'ar';
             document.getElementById('mainBody').dir = isAr ? 'rtl' : 'ltr';
             document.getElementById('mainBody').style.fontFamily = isAr ? 'Cairo' : 'Space Grotesk';
-            document.getElementById('st-1').innerText = isAr ? "العقد النشطة: 928,472" : "NODES ACTIVE: 928,472";
-            document.getElementById('tt-1').innerHTML = isAr ? "الحدس الجماعي:<br><span style='color:var(--accent)'>[النظام_جاهز]</span>" : "COLLECTIVE INTUITION:<br><span style='color:var(--accent)'>[SYSTEM_READY]</span>";
-            document.getElementById('st-3').innerText = isAr ? "خريطة الحدس العالمي" : "GLOBAL INTUITION MAP";
+            document.getElementById('st-1').innerText = isAr ? "928,472 منظور حي" : "928,472 PERSPECTIVES LIVE";
+            document.getElementById('tt-1').innerHTML = isAr ? "مركز الحدس العالمي:<br><span style='color:var(--accent)'>[النظام_جاهز]</span>" : "GLOBAL INTUITION HUB:<br><span style='color:var(--accent)'>[SYSTEM_READY]</span>";
             document.getElementById('lb1').innerText = isAr ? "مستقر" : "STABLE";
             document.getElementById('lb2').innerText = isAr ? "غير مؤكد" : "UNCERTAIN";
             document.getElementById('lb3').innerText = isAr ? "مضطرب" : "VOLATILE";
@@ -126,23 +119,52 @@
         }
 
         function toStep2() {
-            document.getElementById('step-1').style.display = 'none';
+            document.getElementById('step-1').classList.add('hidden');
             document.getElementById('step-2').style.display = 'flex';
         }
 
-        function toStep3(choice) {
-            document.getElementById('step-2').style.display = 'none';
-            document.getElementById('step-3').style.display = 'flex';
-
-            // محاكاة تلوين القارات بناءً على "غالبية" وهمية + اختيار المستخدم
-            const regions = ['na', 'sa', 'eu', 'af', 'as', 'au'];
-            const styles = ['c-stable', 'c-uncertain', 'c-volatile'];
+        function initGlobe(userChoice) {
+            document.getElementById('step-2').classList.add('hidden');
+            document.getElementById('map-legend').style.display = 'flex';
             
-            regions.forEach(reg => {
-                const randomStyle = styles[Math.floor(Math.random() * styles.length)];
-                document.getElementById(reg).classList.add(randomStyle);
-            });
+            // تهيئة الكرة الأرضية
+            world = Globe()
+                (document.getElementById('globe-canvas'))
+                .globeImageUrl('//unpkg.com/three-globe/example/img/earth-dark.jpg') // نسخة ليلية فخمة
+                .backgroundColor('#000000')
+                .showAtmosphere(true)
+                .atmosphereColor('#00f2ff')
+                .atmosphereDaylightAlpha(0.1)
+                .onGlobeClick(() => {}) // السماح باللف والدوران
+
+            // جلب بيانات الدول وتلوينها نيون
+            fetch('https://raw.githubusercontent.com/vasturiano/globe.gl/master/example/datasets/ne_110m_admin_0_countries.geojson')
+                .then(res => res.json())
+                .then(countries => {
+                    world.polygonsData(countries.features)
+                        .polygonCapColor(() => {
+                            // محاكاة ألوان الحدس العالمي بشكل عشوائي احترافي
+                            const colors = ['rgba(0, 255, 204, 0.3)', 'rgba(189, 0, 255, 0.3)', 'rgba(255, 77, 0, 0.3)'];
+                            return colors[Math.floor(Math.random() * colors.length)];
+                        })
+                        .polygonSideColor(() => 'rgba(0, 242, 255, 0.05)')
+                        .polygonStrokeColor(() => '#111')
+                        .polygonLabel(({ properties: d }) => `
+                            <div style="background: rgba(0,0,0,0.8); padding: 5px; border: 1px solid var(--accent); font-size: 10px;">
+                                <b>${currentL === 'ar' ? 'الدولة' : 'Country'}:</b> ${d.NAME}
+                            </div>
+                        `);
+                });
+
+            // ضبط الكاميرا لتبدو الكرة في المنتصف
+            world.controls().autoRotate = true;
+            world.controls().autoRotateSpeed = 0.5;
         }
+
+        // تحديث الحجم عند تغيير حجم الشاشة
+        window.addEventListener('resize', () => {
+            if(world) world.width(window.innerWidth).height(window.innerHeight);
+        });
     </script>
 </body>
 </html>
